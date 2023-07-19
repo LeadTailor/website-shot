@@ -86,13 +86,13 @@ app.post("/screenshot", async (req, res) => {
     pdf:
       params.type == "pdf"
         ? {
-            format:
-              params.pdf.format == "resolution" ? null : params.pdf.format,
-            printBackground: true,
-            landscape: params.pdf.landscape || false,
-            width: params.width || 1920,
-            height: params.height || 1080,
-          }
+          format:
+            params.pdf.format == "resolution" ? null : params.pdf.format,
+          printBackground: true,
+          landscape: params.pdf.landscape || false,
+          width: params.width || 1920,
+          height: params.height || 1080,
+        }
         : false,
     launchOptions: {
       headless: true,
@@ -102,9 +102,34 @@ app.post("/screenshot", async (req, res) => {
       product: "chrome",
       waitUntil: "load",
     },
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36',
     beforeScreenshot: async (page, browser) => {
       if (params.fullPage) {
         await page.evaluate(scrollToBottom);
+
+        await page.evaluate(() => {
+          const expectedText =
+            /^(Accept|Accept all cookies|Accept all|Allow|Allow all|Allow all cookies|Ok)$/gi;
+          const clickAccept = (selector) => {
+            const elements = document.querySelectorAll(selector);
+            for (const element of elements) {
+              if (element.textContent.trim().match(expectedText)) {
+                element.click();
+                return true;
+              }
+            }
+            return false;
+          };
+          if (
+            clickAccept(
+              "a[id*=cookie i], a[class*=cookie i], button[id*=cookie i] , button[class*=cookie i]"
+            )
+          ) {
+            return;
+          }
+          // a second try
+          clickAccept("a, button");
+        });
       }
     },
   };
@@ -113,9 +138,9 @@ app.post("/screenshot", async (req, res) => {
     options.launchOptions.executablePath = "/usr/bin/chromium-browser";
   }
 
-  if (process.env.USER_AGENT && process.env.USER_AGENT.length > 0) {
-    options.userAgent = process.env.USER_AGENT;
-  }
+  // if (process.env.USER_AGENT && process.env.USER_AGENT.length > 0) {
+  //   options.userAgent = process.env.USER_AGENT;
+  // }
 
   const mimeType = params.mimeType;
 

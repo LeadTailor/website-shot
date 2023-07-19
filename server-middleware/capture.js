@@ -436,6 +436,7 @@ const internalCaptureWebsiteCore = async (input, options, page, browser) => {
       window.scrollTo(0, 0);
       /* eslint-enable no-undef */
     });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
   if (options.inset && !screenshotOptions.fullPage) {
